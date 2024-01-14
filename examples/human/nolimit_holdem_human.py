@@ -6,15 +6,17 @@ import rlcard
 from rlcard import models
 from rlcard.agents import NolimitholdemHumanAgent as HumanAgent
 from rlcard.utils import print_card
+import torch
 
 # Make environment
 env = rlcard.make('no-limit-holdem')
 
 human_agent = HumanAgent(env.num_actions)
-human_agent2 = HumanAgent(env.num_actions)
+# human_agent2 = HumanAgent(env.num_actions)
 # random_agent = RandomAgent(num_actions=env.num_actions)
+dqn_agent = torch.load('../../experiments/nolimitholdem_dqn_result6/model.pth')
 
-env.set_agents([human_agent, human_agent2])
+env.set_agents([human_agent, dqn_agent])
 
 
 while (True):
@@ -33,6 +35,10 @@ while (True):
         _action_list.insert(0, action_record[-i])
     for pair in _action_list:
         print('>> Player', pair[0], 'chooses', pair[1])
+
+    # Let's take a look at what the agent card is
+    print('=============== Community Card ===============')
+    print_card(env.get_perfect_information()['public_card'])
 
     # Let's take a look at what the agent card is
     print('===============     Cards all Players    ===============')

@@ -59,7 +59,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--env',
         type=str,
-        default='leduc-holdem',
+        default='no-limit-holdem',
         choices=[
             'blackjack',
             'leduc-holdem',
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         '--models',
         nargs='*',
         default=[
-            'experiments/leduc_holdem_dqn_result/model.pth',
+            'experiments/nolimitholdem_dqn_result6/model.pth',
             'random',
         ],
     )
