@@ -17,17 +17,32 @@ class Logger(object):
         self.txt_path = os.path.join(self.log_dir, 'log.txt')
         self.csv_path = os.path.join(self.log_dir, 'performance.csv')
         self.fig_path = os.path.join(self.log_dir, 'fig.png')
+        self.episode_count_path = os.path.join(self.log_dir, 'episode_count.txt')
+
+        new_path = True
 
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
+            self.episode_count = 0
+        else:
+            episode_count_file_r = open(self.episode_count_path, 'r')
+            self.episode_count = int(episode_count_file_r.readline())
+            episode_count_file_r.close()
+            new_path = False
 
-        self.txt_file = open(self.txt_path, 'w')
-        self.csv_file = open(self.csv_path, 'w')
+        self.txt_file = open(self.txt_path, 'a')
+        self.csv_file = open(self.csv_path, 'a')
+        self.episode_count_file = open(self.episode_count_path, 'w')
+
         fieldnames = ['episode', 'reward']
         self.writer = csv.DictWriter(self.csv_file, fieldnames=fieldnames)
-        self.writer.writeheader()
+        if new_path:
+            self.writer.writeheader()
 
         return self
+
+    def inc_episode_count(self, inc_amount=1):
+        self.episode_count += inc_amount
 
     def log(self, text):
         ''' Write the text to log file then print it.
@@ -56,4 +71,7 @@ class Logger(object):
             self.txt_file.close()
         if self.csv_path is not None:
             self.csv_file.close()
+        if self.episode_count_path is not None:
+            self.episode_count_file.write(str(self.episode_count))
+            self.episode_count_file.close()
         print('\nLogs saved in', self.log_dir)

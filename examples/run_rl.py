@@ -88,12 +88,14 @@ def train(args):
             # Evaluate the performance. Play with random agents.
             if episode % args.evaluate_every == 0:
                 logger.log_performance(
-                    episode,
+                    episode + logger.episode_count,
                     tournament(
                         env,
                         args.num_eval_games,
                     )[0]
                 )
+
+        logger.inc_episode_count(args.num_episodes)
 
         # Get the paths
         csv_path, fig_path = logger.csv_path, logger.fig_path
