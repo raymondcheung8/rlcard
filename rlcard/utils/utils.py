@@ -215,10 +215,12 @@ def tournament(env, num):
             for _p in _payoffs:
                 for i, _ in enumerate(payoffs):
                     payoffs[i] += _p[i]
+                    # print(f"The reward is: {_p[i]}")
                 counter += 1
         else:
             for i, _ in enumerate(payoffs):
                 payoffs[i] += _payoffs[i]
+                # print(f"The reward is: {_payoffs[i]}")
             counter += 1
     for i, _ in enumerate(payoffs):
         payoffs[i] /= counter
@@ -249,3 +251,27 @@ def plot_curve(csv_path, save_path, algorithm):
 
         fig.savefig(save_path)
 
+
+def plot_bar(agents, chips, save_path, no_of_games):
+    ''' Plot the amount of chips gained/lost
+    '''
+    import os
+    import matplotlib.pyplot as plt
+
+    figure_size = (len(agents) * 2, 6)
+    fig, ax = plt.subplots(figsize=figure_size)
+    labels = ['loss' if (x < 0) else 'gain' for x in chips]
+    colors = ['red' if (x < 0) else 'green' for x in chips]
+
+    ax.bar(agents, chips, label=labels, color=colors)
+    ax.set(xlabel='agents', ylabel=f'chip gain / loss in {no_of_games} games')
+    legend_labels = ['Loss', 'Gain']
+    legend_colors = ['red', 'green']
+    legend_handles = [plt.Line2D([0], [0], color=color, lw=3) for color in legend_colors]
+    ax.legend(legend_handles, legend_labels, title='Result', loc='upper right')
+
+    save_dir = os.path.dirname(save_path)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    fig.savefig(save_path)
