@@ -260,13 +260,30 @@ def plot_bar(agents, chips, save_path, no_of_games):
 
     figure_size = (len(agents) * 2, 6)
     fig, ax = plt.subplots(figsize=figure_size)
-    labels = ['loss' if (x < 0) else 'gain' for x in chips]
-    colors = ['red' if (x < 0) else 'green' for x in chips]
+
+    def get_training_method(x):
+        if 'dqn-random' in x:
+            return 'dqn-random'
+        elif 'dqn-dqn' in x:
+            return 'dqn-dqn'
+        else:
+            return 'random'
+
+    def get_color(x):
+        if x == 'dqn-random':
+            return 'royalblue'
+        elif x == 'dqn-dqn':
+            return 'forestgreen'
+        else:
+            return 'firebrick'
+
+    labels = list(map(get_training_method, agents))
+    colors = list(map(get_color, labels))
 
     ax.bar(agents, chips, label=labels, color=colors)
     ax.set(xlabel='agents', ylabel=f'chip gain / loss in {no_of_games} games')
-    legend_labels = ['Loss', 'Gain']
-    legend_colors = ['red', 'green']
+    legend_labels = ['dqn-random', 'dqn-dqn', 'random']
+    legend_colors = ['royalblue', 'forestgreen', 'firebrick']
     legend_handles = [plt.Line2D([0], [0], color=color, lw=3) for color in legend_colors]
     ax.legend(legend_handles, legend_labels, title='Result', loc='upper right')
 
