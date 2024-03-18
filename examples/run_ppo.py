@@ -1,11 +1,15 @@
 """
-This agent was created by following the video
-"Proximal Policy Optimization (PPO) is Easy With PyTorch | Full PPO Tutorial"
-and adapting it to the rlcard library
+This agent was created using the following videos and adapting them to the rlcard library:
 
-Tutorial author is: Phil Tabor <https://github.com/philtabor>
+"Proximal Policy Optimization (PPO) is Easy With PyTorch | Full PPO Tutorial"
+Tutorial author: Phil Tabor <https://github.com/philtabor>
 Tutorial URL: <https://www.youtube.com/watch?v=hlv79rcHws0>
 Sourcecode URL: <https://github.com/philtabor/Youtube-Code-Repository/tree/master/ReinforcementLearning/PolicyGradient/PPO/torch>
+
+"Let's Code Proximal Policy Optimization"
+Tutorial author: Edan Meyer <https://www.youtube.com/@EdanMeyer>
+Tutorial URL: <https://www.youtube.com/watch?v=HR8kQMTO8bk>
+Sourcecode URL: <https://colab.research.google.com/drive/1MsRlEWRAk712AQPmoM9X9E6bNeHULRDb?usp=sharing>
 """
 
 import os
@@ -49,7 +53,6 @@ def train(args):
                    alpha=alpha, n_epochs=n_epochs,
                    input_dims=env.state_shape[0], save_path=args.log_dir)
     env.set_agents([ppo, RandomAgent(num_actions=env.num_actions)])
-    n_games = 10000
 
     figure_file = 'poker.png'
 
@@ -60,7 +63,7 @@ def train(args):
     avg_score = 0
     n_steps = 0
 
-    for i in range(n_games):
+    for i in range(args.num_episodes):
         # Generate data from the environment
         trajectories, payoffs = env.run(is_training=True)
 
@@ -85,7 +88,7 @@ def train(args):
         print('episode', i, 'score %.1f' % score, 'avg score %.1f' % avg_score,
               'time_steps', n_steps, 'learning_steps', learn_iters)
     x = [i + 1 for i in range(len(score_history))]
-    plot_learning_curve(x, score_history, n_games, args.log_dir, args.log_dir + figure_file)
+    plot_learning_curve(x, score_history, args.num_episodes, args.log_dir, args.log_dir + figure_file)
 
 
 if __name__ == '__main__':
@@ -99,6 +102,11 @@ if __name__ == '__main__':
         '--log_dir',
         type=str,
         default='experiments/nolimitholdem_ppo_result3/',
+    )
+    parser.add_argument(
+        '--num_episodes',
+        type=int,
+        default=1000,
     )
     args = parser.parse_args()
 

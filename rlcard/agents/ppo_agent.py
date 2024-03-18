@@ -1,11 +1,15 @@
 """
-This agent was created by following the video
-"Proximal Policy Optimization (PPO) is Easy With PyTorch | Full PPO Tutorial"
-and adapting it to the rlcard library
+This agent was created using the following videos and adapting them to the rlcard library:
 
-Tutorial author is: Phil Tabor <https://github.com/philtabor>
+"Proximal Policy Optimization (PPO) is Easy With PyTorch | Full PPO Tutorial"
+Tutorial author: Phil Tabor <https://github.com/philtabor>
 Tutorial URL: <https://www.youtube.com/watch?v=hlv79rcHws0>
 Sourcecode URL: <https://github.com/philtabor/Youtube-Code-Repository/tree/master/ReinforcementLearning/PolicyGradient/PPO/torch>
+
+"Let's Code Proximal Policy Optimization"
+Tutorial author: Edan Meyer <https://www.youtube.com/@EdanMeyer>
+Tutorial URL: <https://www.youtube.com/watch?v=HR8kQMTO8bk>
+Sourcecode URL: <https://colab.research.google.com/drive/1MsRlEWRAk712AQPmoM9X9E6bNeHULRDb?usp=sharing>
 """
 
 import os
@@ -130,7 +134,8 @@ class CriticNetwork(nn.Module):
 
 class PPOAgent:
     def __init__(self, n_actions, input_dims, gamma=0.99, alpha=0.0003, gae_lambda=0.95,
-                 policy_clip=0.2, batch_size=64, n_epochs=10, save_path='experiments/nolimitholdem_ppo_result/'):
+                 policy_clip=0.2, batch_size=64, n_epochs=10, target_kl_div=0.01,
+                 save_path='experiments/nolimitholdem_ppo_result/'):
         self.gamma = gamma
         self.policy_clip = policy_clip
         self.n_epochs = n_epochs
@@ -140,6 +145,7 @@ class PPOAgent:
         self.actor = ActorNetwork(n_actions, input_dims, alpha, chkpt_dir=save_path)
         self.critic = CriticNetwork(input_dims, alpha, chkpt_dir=save_path)
         self.memory = PPOMemory(batch_size)
+        self.target_kl_div = target_kl_div
         self.save_path = save_path
         self.use_raw = False
 
@@ -194,15 +200,17 @@ class PPOAgent:
         legal_actions = list(state['legal_actions'].keys())
         action, probs, value = self.choose_action(state['obs'])
 
-        count = 0
+        illegal_action_count = 0
+        illegal_action_threshold = 10
         while action not in legal_actions:
             print(f"ACTION: {action}")
-            print(f"COUNT: {count}")
+            print(f"COUNT: {illegal_action_count}")
             print(f"LEGAL ACTIONS: {legal_actions}")
             action, probs, value = self.choose_action(state['obs'])
-            count += 1
+            illegal_action_count += 1
 
-            if count >= 10:
+            # if the model chooses an illegal action more times than the threshold, choose a random legal action
+            if illegal_action_count >= illegal_action_threshold:
                 action, probs, value = self.choose_random_action(state['obs'], legal_actions)
 
         self.probsValsList.append((action, probs, value))
@@ -224,6 +232,7 @@ class PPOAgent:
             values = vals_arr
             advantage = np.zeros(len(reward_arr), dtype=np.float32)
 
+            # Calculate the generalized advantage estimations
             for t in range(len(reward_arr) - 1):
                 discount = 1
                 a_t = 0
@@ -256,11 +265,18 @@ class PPOAgent:
                 critic_loss = (returns - critic_value) ** 2
                 critic_loss = critic_loss.mean()
 
-                total_loss = actor_loss + 0.5 * critic_loss
+                # calculate the total_loss from both the policy and value
+                total_loss = actor_loss + critic_loss
+
                 self.actor.optimizer.zero_grad()
                 self.critic.optimizer.zero_grad()
                 total_loss.backward()
                 self.actor.optimizer.step()
                 self.critic.optimizer.step()
+
+                # if model has diverged too much, stop iterating
+                kl_div = (old_probs - new_probs).mean()
+                if kl_div >= self.target_kl_div:
+                    break
 
         self.memory.clear_memory()
