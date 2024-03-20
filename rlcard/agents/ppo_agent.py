@@ -15,7 +15,7 @@ Sourcecode URL: <https://colab.research.google.com/drive/1MsRlEWRAk712AQPmoM9X9E
 import os
 import random
 import numpy as np
-import torch as T
+import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.categorical import Categorical
@@ -69,9 +69,6 @@ class ActorNetwork(nn.Module):
                  fc1_dims=256, fc2_dims=256, chkpt_dir='experiments/nolimitholdem_ppo_result/'):
         super(ActorNetwork, self).__init__()
 
-        # Ensure the directory exists before saving the checkpoint
-        os.makedirs(os.path.dirname(chkpt_dir), exist_ok=True)
-
         self.checkpoint_file = os.path.join(chkpt_dir, 'actor_torch_ppo')
         self.actor = nn.Sequential(
             nn.Linear(*input_dims, fc1_dims),
@@ -83,7 +80,7 @@ class ActorNetwork(nn.Module):
         )
 
         self.optimizer = optim.Adam(self.parameters(), lr=alpha)
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, state):
@@ -93,19 +90,16 @@ class ActorNetwork(nn.Module):
         return dist
 
     def save_checkpoint(self):
-        T.save(self.state_dict(), self.checkpoint_file)
+        torch.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        self.load_state_dict(T.load(self.checkpoint_file))
+        self.load_state_dict(torch.load(self.checkpoint_file))
 
 
 class CriticNetwork(nn.Module):
     def __init__(self, input_dims, alpha, fc1_dims=256, fc2_dims=256,
                  chkpt_dir='experiments/nolimitholdem_ppo_result/'):
         super(CriticNetwork, self).__init__()
-
-        # Ensure the directory exists before saving the checkpoint
-        os.makedirs(os.path.dirname(chkpt_dir), exist_ok=True)
 
         self.checkpoint_file = os.path.join(chkpt_dir, 'critic_torch_ppo')
         self.critic = nn.Sequential(
@@ -117,7 +111,7 @@ class CriticNetwork(nn.Module):
         )
 
         self.optimizer = optim.Adam(self.parameters(), lr=alpha)
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, state):
@@ -126,30 +120,32 @@ class CriticNetwork(nn.Module):
         return value
 
     def save_checkpoint(self):
-        T.save(self.state_dict(), self.checkpoint_file)
+        torch.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
-        self.load_state_dict(T.load(self.checkpoint_file))
+        self.load_state_dict(torch.load(self.checkpoint_file))
 
 
 class PPOAgent:
     def __init__(self, n_actions, input_dims, gamma=0.99, alpha=0.0003, gae_lambda=0.95,
-                 policy_clip=0.2, batch_size=64, n_epochs=10, target_kl_div=0.01,
+                 policy_clip=0.2, batch_size=64, train_every=1, target_kl_div=0.01,
                  save_path='experiments/nolimitholdem_ppo_result/'):
         self.gamma = gamma
         self.policy_clip = policy_clip
-        self.n_epochs = n_epochs
+        self.train_every = train_every
         self.gae_lambda = gae_lambda
 
-        print(save_path)
         self.actor = ActorNetwork(n_actions, input_dims, alpha, chkpt_dir=save_path)
         self.critic = CriticNetwork(input_dims, alpha, chkpt_dir=save_path)
         self.memory = PPOMemory(batch_size)
         self.target_kl_div = target_kl_div
         self.save_path = save_path
-        self.use_raw = False
 
+        self.use_raw = False
         self.probsValsList = []
+
+        # Total timesteps
+        self.total_t = 0
 
     def feed(self, ts):
         (state, action, reward, next_state, done) = tuple(ts)
@@ -157,7 +153,13 @@ class PPOAgent:
         action2, probs, vals = self.probsValsList.pop(0)
         if action != action2:
             print(f"{action} != {action2}")
+
+        self.total_t += 1
+
         self.memory.store_memory(state['obs'], action, probs, vals, reward, done)
+
+        if self.total_t % self.train_every == 0:
+            self.train()
 
     def save_models(self):
         print('... saving models ...')
@@ -170,33 +172,53 @@ class PPOAgent:
         self.critic.load_checkpoint()
 
     def choose_action(self, observation):
-        state = T.tensor([observation], dtype=T.float).to(self.actor.device)
+        state = torch.tensor([observation], dtype=torch.float).to(self.actor.device)
 
         dist = self.actor(state)
         value = self.critic(state)
         action = dist.sample()
 
-        probs = T.squeeze(dist.log_prob(action)).item()
-        action = T.squeeze(action).item()
-        value = T.squeeze(value).item()
+        probs = torch.squeeze(dist.log_prob(action)).item()
+        action = torch.squeeze(action).item()
+        value = torch.squeeze(value).item()
 
         return action, probs, value
 
     def choose_random_action(self, observation, legal_actions):
-        state = T.tensor([observation], dtype=T.float).to(self.actor.device)
+        state = torch.tensor([observation], dtype=torch.float).to(self.actor.device)
 
         dist = self.actor(state)
         value = self.critic(state)
         action = random.choice(legal_actions)
-        action = T.tensor(action, dtype=T.int).to(self.actor.device)
+        action = torch.tensor(action, dtype=torch.int).to(self.actor.device)
 
-        probs = T.squeeze(dist.log_prob(action)).item()
-        action = T.squeeze(action).item()
-        value = T.squeeze(value).item()
+        probs = torch.squeeze(dist.log_prob(action)).item()
+        action = torch.squeeze(action).item()
+        value = torch.squeeze(value).item()
 
         return action, probs, value
 
     def step(self, state):
+        legal_actions = list(state['legal_actions'].keys())
+        action, probs, value = self.choose_action(state['obs'])
+
+        illegal_action_count = 0
+        illegal_action_threshold = 10
+        while action not in legal_actions:
+            print(f"TRAINING ACTION: {action}")
+            print(f"TRAINING COUNT: {illegal_action_count}")
+            print(f"TRAINING LEGAL ACTIONS: {legal_actions}")
+            action, probs, value = self.choose_action(state['obs'])
+            illegal_action_count += 1
+
+            # if the model chooses an illegal action more times than the threshold, choose a random legal action
+            if illegal_action_count >= illegal_action_threshold:
+                action, probs, value = self.choose_random_action(state['obs'], legal_actions)
+
+        self.probsValsList.append((action, probs, value))
+        return action
+
+    def eval_step(self, state):
         legal_actions = list(state['legal_actions'].keys())
         action, probs, value = self.choose_action(state['obs'])
 
@@ -213,70 +235,62 @@ class PPOAgent:
             if illegal_action_count >= illegal_action_threshold:
                 action, probs, value = self.choose_random_action(state['obs'], legal_actions)
 
-        self.probsValsList.append((action, probs, value))
-        return action
-
-    def eval_step(self, state):
-        action, probs, value = self.choose_action(state['obs'])
-
         info = {}
 
         return action, info
 
     def train(self):
-        for _ in range(self.n_epochs):
-            state_arr, action_arr, old_prob_arr, vals_arr, \
-                reward_arr, dones_arr, batches = \
-                self.memory.generate_batches()
+        state_arr, action_arr, old_prob_arr, vals_arr,  reward_arr, dones_arr, batches = self.memory.generate_batches()
 
-            values = vals_arr
-            advantage = np.zeros(len(reward_arr), dtype=np.float32)
+        values = vals_arr
+        advantage = np.zeros(len(reward_arr), dtype=np.float32)
 
-            # Calculate the generalized advantage estimations
-            for t in range(len(reward_arr) - 1):
-                discount = 1
-                a_t = 0
-                for k in range(t, len(reward_arr) - 1):
-                    a_t += discount * (reward_arr[k] + self.gamma * values[k + 1] * \
-                                       (1 - int(dones_arr[k])) - values[k])
-                    discount *= self.gamma * self.gae_lambda
-                advantage[t] = a_t
-            advantage = T.tensor(advantage).to(self.actor.device)
+        # Calculate the generalized advantage estimations
+        for t in range(len(reward_arr) - 1):
+            discount = 1
+            a_t = 0
+            for k in range(t, len(reward_arr) - 1):
+                a_t += discount * (reward_arr[k] + self.gamma * values[k + 1] * (1 - int(dones_arr[k])) - values[k])
+                discount *= self.gamma * self.gae_lambda
+            advantage[t] = a_t
+        advantage = torch.tensor(advantage).to(self.actor.device)
 
-            values = T.tensor(values).to(self.actor.device)
-            for batch in batches:
-                states = T.tensor(state_arr[batch], dtype=T.float).to(self.actor.device)
-                old_probs = T.tensor(old_prob_arr[batch]).to(self.actor.device)
-                actions = T.tensor(action_arr[batch]).to(self.actor.device)
+        values = torch.tensor(values).to(self.actor.device)
+        for batch in batches:
+            states = torch.tensor(state_arr[batch], dtype=torch.float).to(self.actor.device)
+            old_probs = torch.tensor(old_prob_arr[batch]).to(self.actor.device)
+            actions = torch.tensor(action_arr[batch]).to(self.actor.device)
 
-                dist = self.actor(states)
-                critic_value = self.critic(states)
+            dist = self.actor(states)
+            critic_value = self.critic(states)
 
-                critic_value = T.squeeze(critic_value)
+            critic_value = torch.squeeze(critic_value)
 
-                new_probs = dist.log_prob(actions)
-                prob_ratio = new_probs.exp() / old_probs.exp()
-                weighted_probs = advantage[batch] * prob_ratio
-                weighted_clipped_probs = T.clamp(prob_ratio, 1 - self.policy_clip,
-                                                 1 + self.policy_clip) * advantage[batch]
-                actor_loss = -T.min(weighted_probs, weighted_clipped_probs).mean()
+            new_probs = dist.log_prob(actions)
+            prob_ratio = new_probs.exp() / old_probs.exp()
+            weighted_probs = advantage[batch] * prob_ratio
+            weighted_clipped_probs = (torch.clamp(prob_ratio, 1 - self.policy_clip, 1 + self.policy_clip) *
+                                      advantage[batch])
+            actor_loss = -torch.min(weighted_probs, weighted_clipped_probs).mean()
 
-                returns = advantage[batch] + values[batch]
-                critic_loss = (returns - critic_value) ** 2
-                critic_loss = critic_loss.mean()
+            returns = advantage[batch] + values[batch]
+            critic_loss = (returns - critic_value) ** 2
+            critic_loss = critic_loss.mean()
 
-                # calculate the total_loss from both the policy and value
-                total_loss = actor_loss + critic_loss
+            # calculate the total_loss from both the policy and value
+            total_loss = actor_loss + critic_loss
 
-                self.actor.optimizer.zero_grad()
-                self.critic.optimizer.zero_grad()
-                total_loss.backward()
-                self.actor.optimizer.step()
-                self.critic.optimizer.step()
+            self.actor.optimizer.zero_grad()
+            self.critic.optimizer.zero_grad()
+            total_loss.backward()
+            self.actor.optimizer.step()
+            self.critic.optimizer.step()
 
-                # if model has diverged too much, stop iterating
-                kl_div = (old_probs - new_probs).mean()
-                if kl_div >= self.target_kl_div:
-                    break
+            print('\rINFO - Step {}, rl-loss: {}'.format(self.total_t, total_loss))
+
+            # if model has diverged too much, stop iterating
+            kl_div = (old_probs - new_probs).mean()
+            if kl_div >= self.target_kl_div:
+                break
 
         self.memory.clear_memory()
