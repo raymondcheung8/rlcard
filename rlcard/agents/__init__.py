@@ -17,3 +17,4 @@ from rlcard.agents.human_agents.leduc_holdem_human_agent import HumanAgent as Le
 from rlcard.agents.human_agents.blackjack_human_agent import HumanAgent as BlackjackHumanAgent
 from rlcard.agents.human_agents.uno_human_agent import HumanAgent as UnoHumanAgent
 from rlcard.agents.random_agent import RandomAgent
+from rlcard.agents.equity_agent import EquityAgent

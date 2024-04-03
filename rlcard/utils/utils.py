@@ -252,8 +252,15 @@ def plot_curve(csv_path, save_path, algorithm):
         fig.savefig(save_path)
 
 
-def plot_bar(agents, chips, save_path, no_of_games):
-    ''' Plot the amount of chips gained/lost
+def plot_bar(agents, chips, save_path, no_of_games, training_method_color):
+    ''' Plot the amount of chips gained/lost on a bar chart and save it in the save path specified
+
+    Args:
+        agents (list): the agents
+        chips (list): the chips of each agent
+        save_path (string): the save path of the bar chart
+        no_of_games (int): the number of games played
+        training_method_color (dict): the training method used for each agent
     '''
     import os
     import matplotlib.pyplot as plt
@@ -262,32 +269,18 @@ def plot_bar(agents, chips, save_path, no_of_games):
     fig, ax = plt.subplots(figsize=figure_size)
 
     def get_training_method(x):
-        if 'dqn-random' in x:
-            return 'dqn-random'
-        elif 'dqn-dqn' in x:
-            return 'dqn-dqn'
-        elif 'ppo' in x:
-            return 'ppo'
-        else:
-            return 'random'
-
-    def get_color(x):
-        if x == 'dqn-random':
-            return 'royalblue'
-        elif x == 'dqn-dqn':
-            return 'forestgreen'
-        elif x == 'ppo':
-            return 'royalblue'
-        else:
-            return 'firebrick'
+        for training_method in training_method_color.keys():
+            if training_method in x:
+                return training_method
+        return 'random'
 
     labels = list(map(get_training_method, agents))
-    colors = list(map(get_color, labels))
+    colors = list(map(training_method_color.get, labels))
 
     ax.bar(agents, chips, label=labels, color=colors)
     ax.set(xlabel='agents', ylabel=f'chip gain / loss in {no_of_games} games')
-    legend_labels = ['dqn-random', 'dqn-dqn', 'random']
-    legend_colors = ['royalblue', 'forestgreen', 'firebrick']
+    legend_labels = training_method_color.keys()
+    legend_colors = training_method_color.values()
     legend_handles = [plt.Line2D([0], [0], color=color, lw=3) for color in legend_colors]
     ax.legend(legend_handles, legend_labels, title='Result', loc='upper right')
 

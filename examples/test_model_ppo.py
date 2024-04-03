@@ -7,8 +7,17 @@ import rlcard
 import torch
 
 seed_num = 0
-num_of_agents = 7  # CHANGE THIS EVERY TIME A NEW TEST AGENT IS ADDED
 num_of_games = 10000
+
+test_agents = [torch.load('../experiments/nolimitholdem_ppo_result/model.pth'),
+               torch.load('../experiments/nolimitholdem_ppo_result2/model.pth'),
+               torch.load('../experiments/nolimitholdem_ppo_result3/model.pth'),
+               torch.load('../experiments/nolimitholdem_ppo_result4/model.pth'),
+               torch.load('../experiments/nolimitholdem_ppo_result5/model.pth'),
+               torch.load('../experiments/nolimitholdem_ppo_result6/model.pth')]
+
+# +1 is for the random agent that gets added later
+num_of_agents = len(test_agents) + 1
 
 # Seed numpy, torch, random
 set_seed(seed_num)
@@ -17,13 +26,9 @@ set_seed(seed_num)
 envs = [rlcard.make('no-limit-holdem', config={'seed': seed_num}) for _ in range(num_of_agents)]
 
 random_agent = RandomAgent(num_actions=envs[0].num_actions)
-test_agents = [torch.load('../experiments/nolimitholdem_ppo_result/model.pth'),
-               torch.load('../experiments/nolimitholdem_ppo_result2/model.pth'),
-               torch.load('../experiments/nolimitholdem_ppo_result3/model.pth'),
-               torch.load('../experiments/nolimitholdem_ppo_result4/model.pth'),
-               torch.load('../experiments/nolimitholdem_ppo_result5/model.pth'),
-               torch.load('../experiments/nolimitholdem_ppo_result6/model.pth'),
-               RandomAgent(num_actions=envs[num_of_agents - 1].num_actions)]
+
+# Add a random agent to the agents being tested
+test_agents.append(RandomAgent(num_actions=envs[num_of_agents - 1].num_actions))
 
 dqn_agent_names = [
     'ppo_c-random\n1k_a+c',
@@ -44,5 +49,11 @@ for i in range(num_of_agents):
         trajectories, payoffs = envs[i].run(is_training=False)
         dqn_gain[i] += payoffs[0]
 
+training_method_color = {
+    'ppo_c-random': 'royalblue',
+    'ppo_ckl-random': 'forestgreen',
+    'random': 'firebrick'
+}
+
 print(f"Test_agents gain {dqn_gain} chips.")
-plot_bar(dqn_agent_names, dqn_gain, '../experiments/compare2.png', num_of_games)
+plot_bar(dqn_agent_names, dqn_gain, '../experiments/compare2.png', num_of_games, training_method_color)
