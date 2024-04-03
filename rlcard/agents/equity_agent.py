@@ -246,7 +246,7 @@ class EquityAgent(object):
         Returns:
             outs (int): The number of outs for getting a three of a kind
         '''
-        rank_counts = Counter(map(lambda card: card[-1], cards))
+        rank_counts = Counter(list(map(lambda card: card[-1], cards)))
 
         # There are 4 suits in a deck so there are 2 remaining suits to choose from
         # Return -1 if a three of a kind already exists
@@ -262,8 +262,8 @@ class EquityAgent(object):
         Returns:
             outs (int): The number of outs for getting a straight
         '''
-        ranks = map(lambda card: card[-1], cards)
-        all_ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+        ranks = list(map(lambda card: card[-1], cards))
+        all_ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
         possible_straights = []
         while len(all_ranks) >= 5:
             straight = all_ranks[0:5]
@@ -291,7 +291,7 @@ class EquityAgent(object):
         Returns:
             outs (int): The number of outs for getting a flush
         '''
-        suit_counts = Counter(map(lambda card: card[0], cards))
+        suit_counts = Counter(list(map(lambda card: card[0], cards)))
 
         # There are 13 ranks in a deck so there are 9 remaining ranks to choose from
         # Return -1 if a flush already exists
@@ -307,7 +307,7 @@ class EquityAgent(object):
         Returns:
             outs (int): The number of outs for getting a full house
         '''
-        rank_counts = Counter(map(lambda card: card[-1], cards))
+        rank_counts = Counter(list(map(lambda card: card[-1], cards)))
         pair_count = len(list(filter(lambda count: count == 2, rank_counts.values())))
 
         if 3 in rank_counts.values():
@@ -330,7 +330,7 @@ class EquityAgent(object):
         Returns:
             outs (int): The number of outs for getting a four of a kind
         '''
-        rank_counts = Counter(map(lambda card: card[-1], cards))
+        rank_counts = Counter(list(map(lambda card: card[-1], cards)))
 
         # There are 4 suits in a deck so there are 1 remaining suits to choose from
         # Return -1 if a four of a kind already exists
@@ -347,7 +347,7 @@ class EquityAgent(object):
             outs (int): The number of outs for getting a straight flush
         '''
         all_suits = ['D', 'C', 'H', 'S']
-        all_ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+        all_ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
         possible_straight_flushes = []
         while len(all_ranks) >= 5:
             for suit in all_suits:
@@ -377,7 +377,7 @@ class EquityAgent(object):
             outs (int): The number of outs for getting a royal flush
         '''
         all_suits = ['D', 'C', 'H', 'S']
-        all_ranks = ['10', 'J', 'Q', 'K', 'A']
+        all_ranks = ['T', 'J', 'Q', 'K', 'A']
         possible_royal_flushes = []
         for suit in all_suits:
             royal_flush = list(map(lambda rank: suit + rank, all_ranks))
