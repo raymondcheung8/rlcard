@@ -1,0 +1,48 @@
+''' Compare different models that go against a random agent
+'''
+from rlcard.agents import RandomAgent
+from rlcard.utils import set_seed, plot_bar
+
+import rlcard
+import torch
+
+seed_num = 0
+num_of_agents = 7  # CHANGE THIS EVERY TIME A NEW TEST AGENT IS ADDED
+num_of_games = 10000
+
+# Seed numpy, torch, random
+set_seed(seed_num)
+
+# Make environment
+envs = [rlcard.make('no-limit-holdem', config={'seed': seed_num}) for _ in range(num_of_agents)]
+
+random_agent = RandomAgent(num_actions=envs[0].num_actions)
+test_agents = [torch.load('../experiments/nolimitholdem_ppo_result/model.pth'),
+               torch.load('../experiments/nolimitholdem_ppo_result2/model.pth'),
+               torch.load('../experiments/nolimitholdem_ppo_result3/model.pth'),
+               torch.load('../experiments/nolimitholdem_ppo_result4/model.pth'),
+               torch.load('../experiments/nolimitholdem_ppo_result5/model.pth'),
+               torch.load('../experiments/nolimitholdem_ppo_result6/model.pth'),
+               RandomAgent(num_actions=envs[num_of_agents - 1].num_actions)]
+
+dqn_agent_names = [
+    'ppo_c-random\n1k_a+c',
+    'ppo_c-random\n1k_a+0.5c',
+    'ppo_ckl-random\n1k_a+0.5c',
+    'ppo_ckl-random\n1k_a+0.001c',
+    'ppo_ckl-random\n1k_a+c',
+    'ppo_ckl-random\n1k_a',
+    'random'
+]
+
+dqn_gain = [0 for _ in range(num_of_agents)]
+
+for i in range(num_of_agents):
+    envs[i].set_agents([test_agents[i], random_agent])
+
+    for _ in range(num_of_games):
+        trajectories, payoffs = envs[i].run(is_training=False)
+        dqn_gain[i] += payoffs[0]
+
+print(f"Test_agents gain {dqn_gain} chips.")
+plot_bar(dqn_agent_names, dqn_gain, '../experiments/compare2.png', num_of_games)

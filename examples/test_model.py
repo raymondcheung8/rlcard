@@ -1,4 +1,4 @@
-''' A toy example of playing against pretrianed AI on Leduc Hold'em
+''' Compare different models that go against a random agent
 '''
 from rlcard.agents import RandomAgent
 from rlcard.utils import set_seed, plot_bar

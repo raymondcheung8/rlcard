@@ -266,6 +266,8 @@ def plot_bar(agents, chips, save_path, no_of_games):
             return 'dqn-random'
         elif 'dqn-dqn' in x:
             return 'dqn-dqn'
+        elif 'ppo' in x:
+            return 'ppo'
         else:
             return 'random'
 
@@ -274,6 +276,8 @@ def plot_bar(agents, chips, save_path, no_of_games):
             return 'royalblue'
         elif x == 'dqn-dqn':
             return 'forestgreen'
+        elif x == 'ppo':
+            return 'royalblue'
         else:
             return 'firebrick'
 
