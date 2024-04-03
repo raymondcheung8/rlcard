@@ -22,7 +22,7 @@ from torch.distributions.categorical import Categorical
 
 
 class PPOMemory:
-    def __init__(self, batch_size):
+    def __init__(self, memory_size, batch_size):
         self.states = []
         self.probs = []
         self.vals = []
@@ -30,6 +30,7 @@ class PPOMemory:
         self.rewards = []
         self.dones = []
 
+        self.memory_size = memory_size
         self.batch_size = batch_size
 
     def generate_batches(self):
@@ -48,20 +49,19 @@ class PPOMemory:
             batches
 
     def store_memory(self, state, action, probs, vals, reward, done):
+        if len(self.states) == self.memory_size:
+            self.states.pop(0)
+            self.actions.pop(0)
+            self.probs.pop(0)
+            self.vals.pop(0)
+            self.rewards.pop(0)
+            self.dones.pop(0)
         self.states.append(state)
         self.actions.append(action)
         self.probs.append(probs)
         self.vals.append(vals)
         self.rewards.append(reward)
         self.dones.append(done)
-
-    def clear_memory(self):
-        self.states = []
-        self.probs = []
-        self.actions = []
-        self.rewards = []
-        self.dones = []
-        self.vals = []
 
 
 class ActorNetwork(nn.Module):
@@ -128,7 +128,7 @@ class CriticNetwork(nn.Module):
 
 class PPOAgent:
     def __init__(self, n_actions, input_dims, gamma=0.99, alpha=0.0003, gae_lambda=0.95,
-                 policy_clip=0.2, batch_size=64, train_every=1, target_kl_div=0.01,
+                 policy_clip=0.2, batch_size=64, train_every=1, target_kl_div=0.01, replay_memory_size=20000,
                  save_path='experiments/nolimitholdem_ppo_result/'):
         self.gamma = gamma
         self.policy_clip = policy_clip
@@ -137,7 +137,7 @@ class PPOAgent:
 
         self.actor = ActorNetwork(n_actions, input_dims, alpha, chkpt_dir=save_path)
         self.critic = CriticNetwork(input_dims, alpha, chkpt_dir=save_path)
-        self.memory = PPOMemory(batch_size)
+        self.memory = PPOMemory(replay_memory_size, batch_size)
         self.target_kl_div = target_kl_div
         self.save_path = save_path
 
@@ -149,8 +149,10 @@ class PPOAgent:
 
     def feed(self, ts):
         (state, action, reward, next_state, done) = tuple(ts)
-        # action2, probs, vals = self.choose_action(state['obs'])
-        action2, probs, vals = self.probsValsList.pop(0)
+        action2, probs, vals, current_player = self.probsValsList.pop(0)
+        while current_player != state['raw_obs']['current_player']:
+            self.probsValsList.append((action2, probs, vals, current_player))
+            action2, probs, vals, current_player = self.probsValsList.pop(0)
         if action != action2:
             print(f"{action} != {action2}")
 
@@ -205,9 +207,9 @@ class PPOAgent:
         illegal_action_count = 0
         illegal_action_threshold = 10
         while action not in legal_actions:
-            print(f"TRAINING ACTION: {action}")
-            print(f"TRAINING COUNT: {illegal_action_count}")
-            print(f"TRAINING LEGAL ACTIONS: {legal_actions}")
+            # print(f"TRAINING ACTION: {action}")
+            # print(f"TRAINING COUNT: {illegal_action_count}")
+            # print(f"TRAINING LEGAL ACTIONS: {legal_actions}")
             action, probs, value = self.choose_action(state['obs'])
             illegal_action_count += 1
 
@@ -215,7 +217,7 @@ class PPOAgent:
             if illegal_action_count >= illegal_action_threshold:
                 action, probs, value = self.choose_random_action(state['obs'], legal_actions)
 
-        self.probsValsList.append((action, probs, value))
+        self.probsValsList.append((action, probs, value, state['raw_obs']['current_player']))
         return action
 
     def eval_step(self, state):
@@ -225,9 +227,9 @@ class PPOAgent:
         illegal_action_count = 0
         illegal_action_threshold = 10
         while action not in legal_actions:
-            print(f"ACTION: {action}")
-            print(f"COUNT: {illegal_action_count}")
-            print(f"LEGAL ACTIONS: {legal_actions}")
+            # print(f"ACTION: {action}")
+            # print(f"COUNT: {illegal_action_count}")
+            # print(f"LEGAL ACTIONS: {legal_actions}")
             action, probs, value = self.choose_action(state['obs'])
             illegal_action_count += 1
 
@@ -268,6 +270,10 @@ class PPOAgent:
 
             new_probs = dist.log_prob(actions)
             prob_ratio = new_probs.exp() / old_probs.exp()
+            # print(f"prob_ratio: {prob_ratio}")
+            # print(f"new_probs.exp(): {new_probs.exp()}")
+            # print(f"old_probs.exp(): {old_probs.exp()}")
+            # print(f"advantage[batch]: {advantage[batch]}")
             weighted_probs = advantage[batch] * prob_ratio
             weighted_clipped_probs = (torch.clamp(prob_ratio, 1 - self.policy_clip, 1 + self.policy_clip) *
                                       advantage[batch])
@@ -279,6 +285,9 @@ class PPOAgent:
 
             # calculate the total_loss from both the policy and value
             total_loss = actor_loss + critic_loss
+            # print(f"actor_loss: {actor_loss}")
+            # print(f"critic_loss: {critic_loss}")
+            # print(f"total_loss: {total_loss}")
 
             self.actor.optimizer.zero_grad()
             self.critic.optimizer.zero_grad()
@@ -292,5 +301,3 @@ class PPOAgent:
             kl_div = (old_probs - new_probs).mean()
             if kl_div >= self.target_kl_div:
                 break
-
-        self.memory.clear_memory()
