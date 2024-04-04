@@ -9,16 +9,16 @@ import torch
 seed_num = 20
 num_of_games = 10000
 
-test_agents = [torch.load('../experiments/nolimitholdem_dqn_result/model.pth'),
-               torch.load('../experiments/nolimitholdem_dqn_result2/model.pth'),
-               torch.load('../experiments/nolimitholdem_dqn_result3/model.pth'),
-               torch.load('../experiments/nolimitholdem_dqn_result5/model.pth'),
-               torch.load('../experiments/nolimitholdem_dqn_result4/model.pth'),
-               torch.load('../experiments/nolimitholdem_dqn_result8/model.pth'),
-               torch.load('../experiments/nolimitholdem_dqn_result6/model.pth'),
-               torch.load('../experiments/nolimitholdem_dqn_result7/model.pth'),
-               torch.load('../experiments/nolimitholdem_dqn_result9/model.pth'),
-               torch.load('../experiments/nolimitholdem_dqn_result10/model.pth')]
+test_agents = [torch.load('experiments/nolimitholdem_dqn_result/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result2/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result3/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result5/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result4/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result8/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result6/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result7/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result9/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result10/model.pth')]
 
 # +1 is for the random agent that gets added later
 num_of_agents = len(test_agents) + 1
@@ -64,4 +64,4 @@ training_method_color = {
 }
 
 print(f"Test_agents gain {dqn_gain} chips.")
-plot_bar(dqn_agent_names, dqn_gain, '../experiments/compare.png', num_of_games, training_method_color)
+plot_bar(dqn_agent_names, dqn_gain, 'experiments/compare.png', num_of_games, training_method_color)
