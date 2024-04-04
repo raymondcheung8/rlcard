@@ -1,6 +1,6 @@
 ''' A toy example of playing against pretrianed AI on Leduc Hold'em
 '''
-from rlcard.agents import RandomAgent
+from rlcard.agents import RandomAgent, EquityAgent
 
 import rlcard
 from rlcard import models
@@ -14,7 +14,8 @@ env = rlcard.make('no-limit-holdem')
 human_agent = HumanAgent(env.num_actions)
 # human_agent2 = HumanAgent(env.num_actions)
 # random_agent = RandomAgent(num_actions=env.num_actions)
-dqn_agent = torch.load('../../experiments/nolimitholdem_dqn_result6/model.pth')
+# equity_agent = EquityAgent(num_actions=env.num_actions)
+dqn_agent = torch.load('experiments/nolimitholdem_dqn_result13/model.pth')
 
 env.set_agents([human_agent, dqn_agent])
 

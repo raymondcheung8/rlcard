@@ -15,7 +15,7 @@ Sourcecode URL: <https://colab.research.google.com/drive/1MsRlEWRAk712AQPmoM9X9E
 import os
 import rlcard
 import argparse
-from rlcard.agents import PPOAgent, RandomAgent
+from rlcard.agents import PPOAgent, RandomAgent, EquityAgent
 import torch
 from rlcard.utils import (
     set_seed,
@@ -44,7 +44,7 @@ def train(args):
     ppo = PPOAgent(n_actions=env.num_actions, batch_size=batch_size, alpha=learning_rate,
                    input_dims=env.state_shape[0], save_path=args.log_dir)
 
-    env.set_agents([ppo, RandomAgent(num_actions=env.num_actions)])
+    env.set_agents([ppo, EquityAgent(num_actions=env.num_actions)])
 
     # Start training
     with Logger(args.log_dir) as logger:

@@ -52,7 +52,7 @@ class DQNAgent(object):
                  epsilon_end=0.1,
                  epsilon_decay_steps=20000,
                  batch_size=32,
-                 num_actions=2,
+                 num_actions=5,
                  state_shape=None,
                  train_every=1,
                  mlp_layers=None,
@@ -171,6 +171,9 @@ class DQNAgent(object):
         '''
         q_values = self.predict(state)
         best_action = np.argmax(q_values)
+        print("Q values for each action:")
+        print(q_values)
+        print(f"Index of best action: {best_action}")
 
         info = {}
         info['values'] = {state['raw_legal_actions'][i]: float(q_values[list(state['legal_actions'].keys())[i]]) for i in range(len(state['legal_actions']))}

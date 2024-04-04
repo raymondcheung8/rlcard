@@ -25,6 +25,7 @@ class EquityAgent(object):
             action (int): The action predicted by the equity agent
         '''
         equities = self.get_equities(state)
+        print("Equities for each hand:")
         print(equities)
         pot = state['raw_obs']['pot']
         all_chips = state['raw_obs']['all_chips']

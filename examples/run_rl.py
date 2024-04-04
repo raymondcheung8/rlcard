@@ -6,7 +6,7 @@ import argparse
 import torch
 
 import rlcard
-from rlcard.agents import RandomAgent
+from rlcard.agents import RandomAgent, EquityAgent
 from rlcard.utils import (
     get_device,
     set_seed,
@@ -63,7 +63,7 @@ def train(args):
             )
     agents = [agent]
     for _ in range(1, env.num_players):
-        agents.append(RandomAgent(num_actions=env.num_actions))
+        agents.append(EquityAgent(num_actions=env.num_actions))
     env.set_agents(agents)
 
     # Start training
@@ -76,8 +76,13 @@ def train(args):
             # Generate data from the environment
             trajectories, payoffs = env.run(is_training=True)
 
+            # print(f"OLD_TRAJECTORIES: {trajectories}")
+
             # Reorganaize the data to be state, action, reward, next_state, done
             trajectories = reorganize(trajectories, payoffs)
+
+            # print(f"NEW_TRAJECTORIES: {trajectories}")
+            # print(f"TRAJECTORIES[0]: {trajectories[0]}")
 
             # Feed transitions into agent memory, and train the agent
             # Here, we assume that DQN always plays the first position

@@ -1,4 +1,4 @@
-''' Compare different models that go against a random agent
+''' Compare different models of dqn that are trained against themselves
 '''
 from rlcard.agents import RandomAgent
 from rlcard.utils import set_seed, plot_bar
