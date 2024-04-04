@@ -1,0 +1,47 @@
+DQN RESULTS
+dqn-random_50k (1)
+dqn-dqn_50k (2)
+dqn-random_20k (3)
+dqn-dqn_20k (5)
+dqn-random_10k (4)
+dqn-dqn_10k (8)
+dqn-random_5k (6)
+dqn-dqn_5k (7)
+dqn-random_1k (9)
+dqn-dqn_1k (10)
+dqn-equity_1k (11)
+dqn-equity_5k (12)
+dqn-equity_10k (13)
+
+
+
+PPO RESULTS
+clip a+c (1)
+clip a+0.5c (2)
+clip a+0.001c (15)
+clip a (16)
+
+clip a+c ppo-ppo (7)
+clip a+0.5c ppo-ppo (8)
+clip a+0.001c ppo-ppo (17)
+clip a ppo-ppo (18)
+
+clip a+c ppo-equity (11)
+clip a+0.5c ppo-equity (12)
+clip a+0.001c ppo-equity (21)
+clip a ppo-equity (22)
+
+ckl a+c (5)
+ckl a+0.5c (3)
+ckl a+0.001c (4)
+ckl a (6)
+
+ckl a+c ppo-ppo (9)
+ckl a+0.5c ppo-ppo (10)
+ckl a+0.001c ppo-ppo (19)
+ckl a ppo-ppo (20)
+
+ckl a+c ppo-equity (13)
+ckl a+0.5c ppo-equity (14)
+ckl a+0.001c ppo-equity (23)
+ckl a ppo-equity (24)
