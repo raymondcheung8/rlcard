@@ -6,12 +6,13 @@ from rlcard.utils import set_seed, plot_bar
 import rlcard
 import torch
 
-seed_num = 3
+seed_num = 4
 num_of_games = 10000
 
 test_agents = [torch.load('experiments/nolimitholdem_dqn_result15/model.pth'),
                torch.load('experiments/nolimitholdem_dqn_result16/model.pth'),
                torch.load('experiments/nolimitholdem_dqn_result14/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result17/model.pth'),
                torch.load('experiments/nolimitholdem_dqn_result13/model.pth'),
                torch.load('experiments/nolimitholdem_dqn_result12/model.pth'),
                torch.load('experiments/nolimitholdem_dqn_result11/model.pth')]
@@ -34,6 +35,7 @@ dqn_agent_names = [
     'dqn-equity_50k',
     'dqn-equity_30k',
     'dqn-equity_20k',
+    'dqn-equity_15k',
     'dqn-equity_10k',
     'dqn-equity_5k',
     'dqn-equity_1k',
