@@ -15,6 +15,9 @@
 * dqn-dqn 1k (10)
 
 **DQN-EQUITY RESULTS:**
+* dqn-equity 50k (15)
+* dqn-equity 30k (16)
+* dqn-equity 20k (14)
 * dqn-equity 10k (13)
 * dqn-equity 5k (12)
 * dqn-equity 1k (11)

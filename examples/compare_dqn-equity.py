@@ -9,7 +9,10 @@ import torch
 seed_num = 3
 num_of_games = 10000
 
-test_agents = [torch.load('experiments/nolimitholdem_dqn_result13/model.pth'),
+test_agents = [torch.load('experiments/nolimitholdem_dqn_result15/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result16/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result14/model.pth'),
+               torch.load('experiments/nolimitholdem_dqn_result13/model.pth'),
                torch.load('experiments/nolimitholdem_dqn_result12/model.pth'),
                torch.load('experiments/nolimitholdem_dqn_result11/model.pth')]
 
@@ -28,6 +31,9 @@ random_agent = RandomAgent(num_actions=envs[0].num_actions)
 test_agents.append(RandomAgent(num_actions=envs[num_of_agents - 1].num_actions))
 
 dqn_agent_names = [
+    'dqn-equity_50k',
+    'dqn-equity_30k',
+    'dqn-equity_20k',
     'dqn-equity_10k',
     'dqn-equity_5k',
     'dqn-equity_1k',
