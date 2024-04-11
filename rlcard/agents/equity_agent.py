@@ -317,7 +317,7 @@ class EquityAgent(object):
                 return -1
             else:
                 # There are 4 suits in a deck so there are 3 remaining suits to choose from
-                return 3 * (len(rank_counts) - pair_count)
+                return 3 * len(rank_counts)
 
         # There are 4 suits in a deck so there are 2 remaining suits to choose from
         return 2 * pair_count if pair_count >= 2 else 0
