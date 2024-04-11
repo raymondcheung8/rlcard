@@ -207,9 +207,6 @@ class PPOAgent:
         illegal_action_count = 0
         illegal_action_threshold = 10
         while action not in legal_actions:
-            # print(f"TRAINING ACTION: {action}")
-            # print(f"TRAINING COUNT: {illegal_action_count}")
-            # print(f"TRAINING LEGAL ACTIONS: {legal_actions}")
             action, probs, value = self.choose_action(state['obs'])
             illegal_action_count += 1
 
@@ -227,9 +224,6 @@ class PPOAgent:
         illegal_action_count = 0
         illegal_action_threshold = 10
         while action not in legal_actions:
-            # print(f"ACTION: {action}")
-            # print(f"COUNT: {illegal_action_count}")
-            # print(f"LEGAL ACTIONS: {legal_actions}")
             action, probs, value = self.choose_action(state['obs'])
             illegal_action_count += 1
 
@@ -242,7 +236,7 @@ class PPOAgent:
         return action, info
 
     def train(self):
-        state_arr, action_arr, old_prob_arr, vals_arr,  reward_arr, dones_arr, batches = self.memory.generate_batches()
+        state_arr, action_arr, old_prob_arr, vals_arr, reward_arr, dones_arr, batches = self.memory.generate_batches()
 
         values = vals_arr
         advantage = np.zeros(len(reward_arr), dtype=np.float32)
@@ -270,10 +264,6 @@ class PPOAgent:
 
             new_probs = dist.log_prob(actions)
             prob_ratio = new_probs.exp() / old_probs.exp()
-            # print(f"prob_ratio: {prob_ratio}")
-            # print(f"new_probs.exp(): {new_probs.exp()}")
-            # print(f"old_probs.exp(): {old_probs.exp()}")
-            # print(f"advantage[batch]: {advantage[batch]}")
             weighted_probs = advantage[batch] * prob_ratio
             weighted_clipped_probs = (torch.clamp(prob_ratio, 1 - self.policy_clip, 1 + self.policy_clip) *
                                       advantage[batch])
@@ -285,9 +275,6 @@ class PPOAgent:
 
             # calculate the total_loss from both the policy and value
             total_loss = actor_loss + critic_loss
-            # print(f"actor_loss: {actor_loss}")
-            # print(f"critic_loss: {critic_loss}")
-            # print(f"total_loss: {total_loss}")
 
             self.actor.optimizer.zero_grad()
             self.critic.optimizer.zero_grad()
